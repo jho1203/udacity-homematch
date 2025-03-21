@@ -53,8 +53,7 @@ def find_matching_listings(vectorstore, user_preferences, n_results=5):
             vectorstore, 
             user_preferences, 
             n_results=n_results,
-            metadata_filters=metadata_filters,
-            preference_weights=None
+            metadata_filters=metadata_filters
         )
         
         # If no results with filters, fall back to semantic search
@@ -64,8 +63,7 @@ def find_matching_listings(vectorstore, user_preferences, n_results=5):
                 vectorstore, 
                 user_preferences, 
                 n_results=n_results,
-                metadata_filters=None,
-                preference_weights=None
+                metadata_filters=None
             )
     else:
         # No metadata filters, just do semantic search
@@ -73,8 +71,7 @@ def find_matching_listings(vectorstore, user_preferences, n_results=5):
         vectorstore, 
         user_preferences, 
         n_results=n_results,
-            metadata_filters=None,
-            preference_weights=None
+            metadata_filters=None
     )
     
     print(f"Found {len(results)} matching listings")

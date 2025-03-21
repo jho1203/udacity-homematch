@@ -115,7 +115,7 @@ def setup_vector_database_from_listings(listings=None):
         print(f"Error loading existing database: {e}")
         print("Rebuilding vector database...")
 
-def query_similar_listings(vectorstore, query_text, n_results=3, metadata_filters=None, preference_weights=None):
+def query_similar_listings(vectorstore, query_text, n_results=3, metadata_filters=None):
     # Extract key requirements from the query text
     required_features = extract_key_requirements(query_text)
     
