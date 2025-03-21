@@ -103,18 +103,6 @@ def generate_listings(num_listings=20, output_file='berlin_real_estate_listings.
     return listings
 
 def load_or_generate_listings(listings_file='berlin_real_estate_listings.json', num_listings=20, model_name="gpt-4o", temperature=0.0, max_tokens=1000):
-    """Load existing listings from file or generate new ones if the file doesn't exist.
-    
-    Args:
-        listings_file (str): Path to the listings JSON file
-        num_listings (int): Number of listings to generate if file doesn't exist
-        model_name (str): Name of the OpenAI model to use for generation
-        temperature (float): Temperature parameter for generation
-        max_tokens (int): Maximum tokens for generation
-        
-    Returns:
-        list: A list of listing strings
-    """
     # Check if listings already exist
     if os.path.exists(listings_file):
         print(f"Found existing listings in {listings_file}")
@@ -144,7 +132,6 @@ def load_or_generate_listings(listings_file='berlin_real_estate_listings.json', 
 
 
 def test_load_or_generate_listings():
-    """Test function to verify that load_or_generate_listings returns a consistent type."""
     # Create a temporary test file
     test_file = 'test_listings.json'
     
