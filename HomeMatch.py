@@ -7,9 +7,10 @@ from vector_database import query_similar_listings, setup_vector_database_from_l
 from personalized_descriptions import generate_personalized_listings
 from metadata_extraction import extract_search_parameters_llm
 
-# Set environment variables for OpenAI API
-os.environ["OPENAI_API_KEY"] = "voc-179973988312667737828436792a9844e21d5.28199995"
-os.environ["OPENAI_API_BASE"] = "https://openai.vocareum.com/v1"
+# Check if environment variables are set
+if "OPENAI_API_KEY" not in os.environ or "OPENAI_API_BASE" not in os.environ:
+    print("Warning: OPENAI_API_KEY or OPENAI_API_BASE environment variables are not set.")
+    print("Please set these environment variables before running the application.")
 
 def load_or_generate_listings(model_name="gpt-4o", temperature=0.0, max_tokens=1000):
     # Check if listings already exist
@@ -26,6 +27,8 @@ def load_or_generate_listings(model_name="gpt-4o", temperature=0.0, max_tokens=1
         
         # Call the listing generation function from generate_listings.py with parameters
         listings = generate_listings(
+            num_listings=20,
+            output_file=listings_file,
             model_name=model_name,
             temperature=temperature,
             max_tokens=max_tokens
@@ -33,21 +36,13 @@ def load_or_generate_listings(model_name="gpt-4o", temperature=0.0, max_tokens=1
     
     return listings
 
-def setup_vector_database(listings=None):
-   
-    print("\nSetting up vector database...")
-    # Use the function from vector_database.py with force_rebuild=True
-    vectorstore = setup_vector_database_from_listings(listings, force_rebuild=True)
-    print("Vector database setup complete!")
-    return vectorstore
 
-def find_matching_listings(vectorstore, user_preferences, n_results=3):
-    print(f"\nSearching for listings matching user preferences...")
-    
+
+def find_matching_listings(vectorstore, user_preferences, n_results=5):
     # Extract metadata filters from user preferences using LLM
     metadata_filters = extract_search_parameters_llm(user_preferences)
     
-    # Print the extracted filters
+    # Print the extracted metadata filters
     if metadata_filters:
         print("Applying metadata filters:")
         for key, value in metadata_filters.items():
@@ -75,12 +70,12 @@ def find_matching_listings(vectorstore, user_preferences, n_results=3):
     else:
         # No metadata filters, just do semantic search
         results = query_similar_listings(
-            vectorstore, 
-            user_preferences, 
-            n_results=n_results,
+        vectorstore, 
+        user_preferences, 
+        n_results=n_results,
             metadata_filters=None,
             preference_weights=None
-        )
+    )
     
     print(f"Found {len(results)} matching listings")
     return results
@@ -121,16 +116,19 @@ def main():
     print("Welcome to HomeMatch - Your Personalized Real Estate Listing Generator")
     print("----------------------------------------------------------------------")
     
-    # Step 1: Load listings
+    # Step 1: Load or generate listings
+    print("\nStep 1: Loading or generating real estate listings...")
     listings = load_or_generate_listings()
     
     # Step 2: Set up vector database
-    vectorstore = setup_vector_database(listings)
+    print("\nStep 2: Setting up vector database...")
+    vectorstore = setup_vector_database_from_listings(listings)
     
     # Step 3: Collect user preferences
+    print("\nStep 3: Collecting user preferences...")
     questions, answers, combined_preferences = collect_user_preferences()
     
-    # Print user preferences
+    # Print the user's preference profile
     print("\nUser Preference Profile:")
     print("------------------------------")
     for i, (question, answer) in enumerate(zip(questions, answers)):
@@ -139,26 +137,29 @@ def main():
     print("\n")
     
     # Step 4: Find matching listings
-    matching_listings = find_matching_listings(vectorstore, combined_preferences)
+    print("\nStep 4: Finding matching listings...")
+    matched_listings = find_matching_listings(vectorstore, combined_preferences)
     
-    # Step 5: Generate personalized descriptions
-    print("\nGenerating personalized descriptions based on user preferences...")
-    personalized_listings = generate_personalized_listings(matching_listings, combined_preferences)
-    
-    # Step 6: Display personalized listings
-    print("\n" + "=" * 50)
-    print("USER PREFERENCES:")
-    print("I'm looking for a property with the following characteristics:")
-    for i, (question, answer) in enumerate(zip(questions, answers)):
-        print(f"{question}: {answer}")
-    print("=" * 50)
-    
-    # Display each personalized listing
-    for i, listing in enumerate(personalized_listings):
-        print(f"\nPERSONALIZED LISTING {i+1} (Similarity: {1-listing['similarity_score']:.2f})")
-        print("-" * 40)
-        print(listing['personalized_description'])
-        print("-" * 40)
+    if matched_listings:
+        print(f"Found {len(matched_listings)} matching listings")
+        
+        # Step 5: Generate personalized descriptions
+        print("\nStep 5: Generating personalized descriptions...")
+        personalized_listings = generate_personalized_listings(matched_listings, combined_preferences)
+        
+        # Step 6: Display personalized listings
+        print("\nStep 6: Displaying personalized listings...")
+        print("\nHere are your personalized property listings:")
+        print("=============================================\n")
+        
+        for i, personalized_listing in enumerate(personalized_listings):
+            print(f"Listing {i+1}:")
+            print("----------")
+            print(personalized_listing)
+            print("\n")
+    else:
+        print("Sorry, no matching listings were found for your preferences.")
+        print("Please try again with different preferences.")
 
 if __name__ == "__main__":
     main()

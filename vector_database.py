@@ -1,16 +1,13 @@
 import os
 import json
+import re
+from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores import Chroma
-from langchain.embeddings import OpenAIEmbeddings
 from langchain.schema import Document
 
-def extract_listing_data(listing):
-    # Import re at the top of the function to avoid multiple imports
-    import re
-    
+def extract_listing_metadata(listing_text):
     metadata = {}
-    lines = listing.strip().split('\n')
-    document_parts = []
+    lines = listing_text.strip().split('\n')
     
     # Process the first section (basic information)
     for i, line in enumerate(lines):
@@ -24,14 +21,14 @@ def extract_listing_data(listing):
                 # Extract just the number for bedrooms
                 bedroom_match = re.search(r'(\d+)', value)
                 if bedroom_match:
-                    metadata[key] = bedroom_match.group(1)  # Store as string for consistency
+                    metadata[key] = int(bedroom_match.group(1))  # Store as integer
                 else:
                     metadata[key] = value
             elif key == 'bathrooms':
                 # Extract just the number for bathrooms
                 bathroom_match = re.search(r'(\d+)', value)
                 if bathroom_match:
-                    metadata[key] = bathroom_match.group(1)  # Store as string for consistency
+                    metadata[key] = int(bathroom_match.group(1))  # Store as integer
                 else:
                     metadata[key] = value
             elif key == 'size':
@@ -52,93 +49,71 @@ def extract_listing_data(listing):
                     metadata[key] = value
             else:
                 metadata[key] = value
-        elif line.startswith("Description:"):  # Start of description
-            description = line.replace("Description:", "").strip()
-            document_parts.append(description)
-        elif line.startswith("Neighborhood Description:"):  # Start of neighborhood description
-            neighborhood = line.replace("Neighborhood Description:", "").strip()
-            document_parts.append(neighborhood)
-        elif i > 5 and not line.startswith("Description:") and not line.startswith("Neighborhood Description:"):
-            # This is part of a description
-            document_parts.append(line)
     
-    # Join all parts of the document text
-    document_text = " ".join(document_parts)
-    
-    # Print the extracted metadata for debugging
-    print(f"Extracted metadata: {metadata}")
-    
-    return Document(page_content=document_text, metadata=metadata)
+    return metadata
 
-def setup_vector_database(listings, persist_directory="./chroma_db"):
-    # Create documents from listings
-    documents = [extract_listing_data(listing) for listing in listings]
-    
-    # Initialize the OpenAI embeddings
-    embeddings = OpenAIEmbeddings(
-        openai_api_key=os.environ.get("OPENAI_API_KEY"),
-        openai_api_base=os.environ.get("OPENAI_API_BASE")
-    )
-    
-    # Create or get the Chroma vector store
-    # If the persist_directory exists, it will load the existing DB
-    # Otherwise, it will create a new one with the provided documents
-    if os.path.exists(persist_directory) and len(os.listdir(persist_directory)) > 0:
-        print(f"Loading existing vector database from {persist_directory}")
-        vectorstore = Chroma(persist_directory=persist_directory, embedding_function=embeddings)
-        print(f"Loaded {vectorstore._collection.count()} documents from vector database")
-    else:
-        print(f"Creating new vector database in {persist_directory}")
-        vectorstore = Chroma.from_documents(
-            documents=documents,
-            embedding=embeddings,
-            persist_directory=persist_directory
-        )
-        vectorstore.persist()
-        print(f"Added {len(documents)} documents to vector database")
-    
-    return vectorstore
-
-def setup_vector_database_from_listings(listings=None, force_rebuild=False):
-    # Check if listings are provided
-    if listings is None:
-        listings = []
-    
-    # Check if we have existing listings
-    if os.path.exists(listings_file):
-        print(f"Found existing listings in {listings_file}")
-        with open(listings_file, "r") as f:
-            listings = json.load(f)
-        print(f"Loaded {len(listings)} existing listings")
-        
-        # Print an example original listing
-        print("\nExample original listing:")
-        print(listings[0])
-    else:
-        print(f"No existing listings found in {listings_file}")
-        listings = []
-    
-    # Check if we should rebuild the database
+def setup_vector_database_from_listings(listings=None):
     db_path = "./chroma_db"
-    if force_rebuild or not os.path.exists(db_path):
-        print("Building new vector database...")
-        return setup_vector_database(listings, persist_directory=db_path)
-    else:
-        try:
-            print("Loading existing vector database from ./chroma_db")
-            # Initialize the embedding function
-            embedding_function = OpenAIEmbeddings(
-                openai_api_key=os.environ.get("OPENAI_API_KEY"),
-                openai_api_base=os.environ.get("OPENAI_API_BASE")
-            )
-            # Load the existing database
-            vectorstore = Chroma(persist_directory=db_path, embedding_function=embedding_function)
-            print(f"Loaded {vectorstore._collection.count()} documents from vector database")
-            return vectorstore
-        except Exception as e:
-            print(f"Error loading existing database: {e}")
-            print("Rebuilding vector database...")
-            return setup_vector_database(listings, persist_directory=db_path)
+    
+    # Check if database exists
+    db_exists = os.path.exists(db_path) and os.path.isdir(db_path) and len(os.listdir(db_path)) > 0
+    
+    if not db_exists:
+        # Check if listings are provided and non-empty
+        if listings is None or len(listings) == 0:
+            raise ValueError("Listings parameter must be provided and non-empty")
+        print("Building vector database...")
+        # Create embeddings for the listings
+        documents = []
+        metadatas = []
+        ids = []
+        
+        for i, listing in enumerate(listings):
+            # Extract the listing text
+            listing_text = listing.get('listing_text', '')
+            
+            # Extract metadata from the listing
+            metadata = extract_listing_metadata(listing_text)
+            
+            # Add the listing to the documents
+            documents.append(listing_text)
+            metadatas.append(metadata)
+            ids.append(f"listing_{i}")
+        
+        # Initialize the embedding function
+        embedding_function = OpenAIEmbeddings(
+            openai_api_key=os.environ.get("OPENAI_API_KEY"),
+            openai_api_base=os.environ.get("OPENAI_API_BASE")
+        )
+        
+        # Create and persist the vector database
+        vectorstore = Chroma.from_texts(
+            documents,
+            embedding_function,
+            metadatas=metadatas,
+            ids=ids,
+            persist_directory=db_path
+        )
+        
+        # Persist the database
+        vectorstore.persist()
+        
+        print(f"Added {len(documents)} listings to vector database")
+        return vectorstore
+    
+    # Try to load existing database
+    try:
+        print(f"Loading existing vector database from {db_path}")
+        embedding_function = OpenAIEmbeddings(
+            openai_api_key=os.environ.get("OPENAI_API_KEY"),
+            openai_api_base=os.environ.get("OPENAI_API_BASE")
+        )
+        vectorstore = Chroma(persist_directory=db_path, embedding_function=embedding_function)
+        print(f"Loaded {vectorstore._collection.count()} documents from vector database")
+        return vectorstore
+    except Exception as e:
+        print(f"Error loading existing database: {e}")
+        print("Rebuilding vector database...")
 
 def query_similar_listings(vectorstore, query_text, n_results=3, metadata_filters=None, preference_weights=None):
     # Extract key requirements from the query text
@@ -150,15 +125,6 @@ def query_similar_listings(vectorstore, query_text, n_results=3, metadata_filter
         for key, value in metadata_filters.items():
             if key == "bedrooms":
                 # For bedrooms, use greater than or equal to
-                try:
-                    # Keep as string for comparison since it's stored as string in ChromaDB
-                    filter_dict[key] = value
-                    print(f"  - minimum {key}: {value}")
-                except ValueError:
-                    # If not a valid value, skip this filter
-                    print(f"  - skipping invalid {key} value: {value}")
-            elif key == "bathrooms":
-                # For bathrooms, use greater than or equal to
                 try:
                     # Keep as string for comparison since it's stored as string in ChromaDB
                     filter_dict[key] = value
@@ -262,17 +228,17 @@ def rerank_results(results, required_features=None):
 
 # This block only runs when the script is executed directly, not when imported
 if __name__ == "__main__":
-    # Set environment variables for OpenAI API
-    os.environ["OPENAI_API_KEY"] = "voc-179973988312667737828436792a9844e21d5.28199995"
-    os.environ["OPENAI_API_BASE"] = "https://openai.vocareum.com/v1"
+    # Check if environment variables are set
+    if "OPENAI_API_KEY" not in os.environ or "OPENAI_API_BASE" not in os.environ:
+        print("Warning: OPENAI_API_KEY or OPENAI_API_BASE environment variables are not set.")
+        print("Please set these environment variables before running the application.")
     
-    # Load listings
-    listings_file = 'berlin_real_estate_listings.json'
-    with open(listings_file, 'r') as f:
+    # Load listings from file
+    with open("berlin_real_estate_listings.json", "r") as f:
         listings = json.load(f)
     
     # Set up the vector database
-    vectorstore = setup_vector_database(listings)
+    vectorstore = setup_vector_database_from_listings(listings)
     
     # Test a query
     test_query = "Modern apartment in a trendy neighborhood with good nightlife"

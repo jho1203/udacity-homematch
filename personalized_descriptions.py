@@ -91,37 +91,36 @@ def generate_personalized_listings(matched_listings, user_preferences, model_nam
 
 # This block only runs when the script is executed directly, not when imported
 if __name__ == "__main__":
-    # Set environment variables for OpenAI API
-    os.environ["OPENAI_API_KEY"] = "voc-179973988312667737828436792a9844e21d5.28199995"
-    os.environ["OPENAI_API_BASE"] = "https://openai.vocareum.com/v1"
+    # Check if environment variables are set
+    if "OPENAI_API_KEY" not in os.environ or "OPENAI_API_BASE" not in os.environ:
+        print("Warning: OPENAI_API_KEY or OPENAI_API_BASE environment variables are not set.")
+        print("Please set these environment variables before running the application.")
     
-    # Test with a sample document and preferences
+    # Import necessary modules for testing
     from langchain.schema import Document
     
-    # Create a sample document
-    sample_doc = Document(
-        page_content="This beautiful apartment features high ceilings, hardwood floors, and large windows. Located in a historic building with modern amenities.",
+    # Create a sample listing document
+    listing_doc = Document(
+        page_content="Borough: Kreuzberg\nPrice: €450,000\nBedrooms: 2\nBathrooms: 1\nSize: 85 m²\n\nDescription: Welcome to this stylish Altbau apartment in the heart of vibrant Kreuzberg. This beautifully renovated 2-bedroom, 1-bathroom home features high ceilings, original hardwood floors, and large windows that flood the space with natural light. The modern kitchen is equipped with high-end appliances and opens to a cozy balcony overlooking a quiet courtyard. Original architectural details have been carefully preserved while modern amenities ensure comfortable city living. The apartment includes a cellar storage space and is located in a well-maintained historic building with a newly renovated façade.\n\nNeighborhood Description: Kreuzberg is one of Berlin's most diverse and culturally rich boroughs, known for its alternative scene, vibrant nightlife, and multicultural atmosphere. The apartment is steps away from the picturesque Landwehr Canal, perfect for summer picnics and leisurely walks. Enjoy the famous Turkish Market, countless international restaurants, trendy cafés, and independent boutiques. With excellent public transportation connections via the nearby Görlitzer Bahnhof U-Bahn station, you can easily reach all parts of Berlin.",
         metadata={
             "borough": "Kreuzberg",
-            "price": "€450,000",
+            "price": 450000,
             "bedrooms": "2",
             "bathrooms": "1",
-            "size": "85 m²"
+            "size": 85
         }
     )
     
-    # Sample user preferences
-    sample_preferences = "I'm looking for a bright apartment with character in a lively neighborhood. I work from home so I need good natural light."
+    # Create sample user preferences
+    user_preferences = "I'm looking for a modern apartment in a trendy neighborhood with good nightlife. I need 2 bedrooms and would like to be close to public transportation. I love having outdoor space and natural light."
     
-    # Generate personalized description
-    personalized_description = create_personalized_description(sample_doc, sample_preferences)
+    # Generate a personalized description
+    personalized_description = create_personalized_description(listing_doc, user_preferences)
     
-    print("Sample Document:")
-    print(f"Metadata: {sample_doc.metadata}")
-    print(f"Content: {sample_doc.page_content}")
-    
+    # Print the results
+    print("\nOriginal Listing:")
+    print(listing_doc.page_content[:200] + "...")
     print("\nUser Preferences:")
-    print(sample_preferences)
-    
+    print(user_preferences)
     print("\nPersonalized Description:")
     print(personalized_description)

@@ -71,9 +71,10 @@ def test_extraction():
 
 # Allow running this file directly for testing
 if __name__ == "__main__":
-    # Set environment variables for OpenAI API if not already set
-    if "OPENAI_API_KEY" not in os.environ:
-        os.environ["OPENAI_API_KEY"] = "voc-179973988312667737828436792a9844e21d5.28199995"
-        os.environ["OPENAI_API_BASE"] = "https://openai.vocareum.com/v1"
+    # Check if environment variables are set
+    if "OPENAI_API_KEY" not in os.environ or "OPENAI_API_BASE" not in os.environ:
+        print("Warning: OPENAI_API_KEY or OPENAI_API_BASE environment variables are not set.")
+        print("Please set these environment variables before running the application.")
     
+    # Run the test function
     test_extraction()

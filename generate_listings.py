@@ -3,10 +3,6 @@ import json
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts import PromptTemplate
 
-# Ensure environment variables are set
-os.environ["OPENAI_API_KEY"] = "voc-179973988312667737828436792a9844e21d5.28199995"
-os.environ["OPENAI_API_BASE"] = "https://openai.vocareum.com/v1"
-
 # Define a prompt template for generating real estate listings in Berlin, Germany
 listing_template = """
 Generate a detailed real estate listing for a property in Berlin, Germany with the following components:
@@ -108,6 +104,11 @@ def generate_listings(num_listings=20, output_file='berlin_real_estate_listings.
 
 # This block only runs when the script is executed directly, not when imported
 if __name__ == "__main__":
+    # Check if environment variables are set
+    if "OPENAI_API_KEY" not in os.environ or "OPENAI_API_BASE" not in os.environ:
+        print("Warning: OPENAI_API_KEY or OPENAI_API_BASE environment variables are not set.")
+        print("Please set these environment variables before running the application.")
+    
     listings = generate_listings()
     
     # Display the first listing as an example
