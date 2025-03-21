@@ -69,8 +69,12 @@ def setup_vector_database_from_listings(listings=None):
         ids = []
         
         for i, listing in enumerate(listings):
-            # Extract the listing text
-            listing_text = listing.get('listing_text', '')
+            # If the listing is already a string, use it directly
+            # Otherwise, try to extract the listing_text field
+            if isinstance(listing, dict):
+                listing_text = listing.get('listing_text', '')
+            else:
+                listing_text = listing
             
             # Extract metadata from the listing
             metadata = extract_listing_metadata(listing_text)
@@ -125,7 +129,6 @@ def query_similar_listings(vectorstore, query_text, n_results=3, metadata_filter
                 try:
                     # Keep as string for comparison since it's stored as string in ChromaDB
                     filter_dict[key] = value
-                    print(f"  - minimum {key}: {value}")
                 except ValueError:
                     # If not a valid value, skip this filter
                     print(f"  - skipping invalid {key} value: {value}")
@@ -158,8 +161,8 @@ def query_similar_listings(vectorstore, query_text, n_results=3, metadata_filter
 if __name__ == "__main__":
     # Check if environment variables are set
     if "OPENAI_API_KEY" not in os.environ or "OPENAI_API_BASE" not in os.environ:
-        print("Warning: OPENAI_API_KEY or OPENAI_API_BASE environment variables are not set.")
-        print("Please set these environment variables before running the application.")
+        print("Error: OPENAI_API_KEY and OPENAI_API_BASE environment variables must be set.")
+        exit(1)
     
     # Load listings from file
     with open("berlin_real_estate_listings.json", "r") as f:
@@ -177,10 +180,12 @@ if __name__ == "__main__":
     
     for i, (doc, score) in enumerate(results):
         print(f"\nListing {i+1} (Similarity: {score:.2f})")
-        print(f"Borough: {doc.metadata.get('borough', 'Unknown')}")
-        print(f"Bedrooms: {doc.metadata.get('bedrooms', 'Unknown')}")
-        print(f"Bathrooms: {doc.metadata.get('bathrooms', 'Unknown')}")
-        print(f"Price: {doc.metadata.get('price', 'Unknown')}")
-        print(f"Size: {doc.metadata.get('size', 'Unknown')}")
+        print(f"Borough: {doc.metadata.get('borough', 'N/A')}")
+        print(f"Bedrooms: {doc.metadata.get('bedrooms', 'N/A')}")
+        print(f"Bathrooms: {doc.metadata.get('bathrooms', 'N/A')}")
+        print(f"Price: {doc.metadata.get('price', 'N/A')}")
+        print(f"Size: {doc.metadata.get('size', 'N/A')}")
+        
         print("\nDescription:")
-        print(doc.page_content[:200] + "...")
+        # Print just the first 150 characters of the description
+        print(doc.page_content[:150] + "...")

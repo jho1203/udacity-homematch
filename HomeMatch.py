@@ -2,8 +2,12 @@
 
 import os
 import json
-from generate_listings import generate_listings
-from vector_database import query_similar_listings, setup_vector_database_from_listings
+from langchain.chat_models import ChatOpenAI
+from langchain.prompts import PromptTemplate
+from langchain.output_parsers import StructuredOutputParser, ResponseSchema
+
+from generate_listings import load_or_generate_listings
+from vector_database import setup_vector_database_from_listings, query_similar_listings
 from personalized_descriptions import generate_personalized_listings
 from metadata_extraction import extract_search_parameters_llm
 
@@ -11,32 +15,6 @@ from metadata_extraction import extract_search_parameters_llm
 if "OPENAI_API_KEY" not in os.environ or "OPENAI_API_BASE" not in os.environ:
     print("Warning: OPENAI_API_KEY or OPENAI_API_BASE environment variables are not set.")
     print("Please set these environment variables before running the application.")
-
-def load_or_generate_listings(model_name="gpt-4o", temperature=0.0, max_tokens=1000):
-    # Check if listings already exist
-    listings_file = 'berlin_real_estate_listings.json'
-    if os.path.exists(listings_file):
-        print(f"Found existing listings in {listings_file}")
-        
-        # Load existing listings
-        with open(listings_file, 'r') as f:
-            listings = json.load(f)
-        print(f"Loaded {len(listings)} existing listings")
-    else:
-        print("No existing listings found. Generating new listings...")
-        
-        # Call the listing generation function from generate_listings.py with parameters
-        listings = generate_listings(
-            num_listings=20,
-            output_file=listings_file,
-            model_name=model_name,
-            temperature=temperature,
-            max_tokens=max_tokens
-        )
-    
-    return listings
-
-
 
 def find_matching_listings(vectorstore, user_preferences, n_results=3):
     # Extract metadata filters from user preferences using LLM
@@ -111,11 +89,11 @@ def collect_user_preferences():
 
 def main():
     print("Welcome to HomeMatch - Your Personalized Real Estate Listing Generator")
-    print("----------------------------------------------------------------------")
+    print("----------------------------------------------------------------------\n")
     
-    # Step 1: Load or generate listings
-    print("\nStep 1: Loading or generating real estate listings...")
-    listings = load_or_generate_listings()
+    # Step 1: Load or generate real estate listings
+    print("Step 1: Loading or generating real estate listings...")
+    listings = load_or_generate_listings(num_listings=20)
     
     # Step 2: Set up vector database
     print("\nStep 2: Setting up vector database...")
