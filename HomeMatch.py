@@ -93,7 +93,7 @@ def main():
     
     # Step 1: Load or generate real estate listings
     print("Step 1: Loading or generating real estate listings...")
-    listings = load_or_generate_listings(num_listings=20)
+    listings = load_or_generate_listings()
     
     # Step 2: Set up vector database
     print("\nStep 2: Setting up vector database...")

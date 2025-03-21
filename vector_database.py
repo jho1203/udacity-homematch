@@ -124,13 +124,15 @@ def query_similar_listings(vectorstore, query_text, n_results=3, metadata_filter
     if metadata_filters:
         filter_dict = {}
         for key, value in metadata_filters.items():
-            if key == "bedrooms":
-                # For bedrooms, use greater than or equal to
+            if key in ["bedrooms", "bathrooms"]:
+                # For bedrooms and bathrooms, use greater than or equal to
                 try:
-                    # Keep as string for comparison since it's stored as string in ChromaDB
-                    filter_dict[key] = value
+                    # Convert to int and use $gte operator for minimum requirements
+                    numeric_value = int(value)
+                    filter_dict[key] = {"$gte": numeric_value}
+                    print(f"  - filtering {key} >= {numeric_value}")
                 except ValueError:
-                    # If not a valid value, skip this filter
+                    # If not a valid number, skip this filter
                     print(f"  - skipping invalid {key} value: {value}")
         
         # Perform the search with filters
@@ -140,7 +142,7 @@ def query_similar_listings(vectorstore, query_text, n_results=3, metadata_filter
                 k=n_results,  # Get more results initially
                 filter=filter_dict
             )
-            print(f"Found {len(results)} results with metadata filters")
+            print(f"Found {len(results)} results with metadata filters: {filter_dict}")
         except Exception as e:
             print(f"Error applying metadata filters: {e}")
             print("Falling back to semantic search without filters")
