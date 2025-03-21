@@ -116,9 +116,6 @@ def setup_vector_database_from_listings(listings=None):
         print("Rebuilding vector database...")
 
 def query_similar_listings(vectorstore, query_text, n_results=3, metadata_filters=None):
-    # Extract key requirements from the query text
-    required_features = extract_key_requirements(query_text)
-    
     # Apply metadata filters if provided
     if metadata_filters:
         filter_dict = {}
@@ -137,7 +134,7 @@ def query_similar_listings(vectorstore, query_text, n_results=3, metadata_filter
         try:
             results = vectorstore.similarity_search_with_score(
                 query_text,
-                k=n_results * 3,  # Get more results initially to allow for reranking
+                k=n_results,  # Get more results initially
                 filter=filter_dict
             )
             print(f"Found {len(results)} results with metadata filters")
@@ -146,85 +143,16 @@ def query_similar_listings(vectorstore, query_text, n_results=3, metadata_filter
             print("Falling back to semantic search without filters")
             results = vectorstore.similarity_search_with_score(
                 query_text,
-                k=n_results * 3  # Get more results initially to allow for reranking
+                k=n_results  # Get more results initially
             )
     else:
         # No metadata filters, just do semantic search
         results = vectorstore.similarity_search_with_score(
             query_text,
-            k=n_results * 3  # Get more results initially to allow for reranking
+            k=n_results  # Get more results initially
         )
     
-    # Rerank results based on required features
-    if required_features:
-        results = rerank_results(results, required_features)
-    
     return results[:n_results]
-
-def extract_key_requirements(query_text):
-    # Use regular expressions to extract key requirements
-    required_features = {}
-    
-    # Look for bedroom requirements
-    if "bedroom" in query_text.lower():
-        # Simple pattern matching for bedroom requirements
-        if "one bedroom" in query_text.lower() or "1 bedroom" in query_text.lower():
-            required_features["bedrooms"] = "1"
-        elif "two bedroom" in query_text.lower() or "2 bedroom" in query_text.lower():
-            required_features["bedrooms"] = "2"
-        elif "three bedroom" in query_text.lower() or "3 bedroom" in query_text.lower():
-            required_features["bedrooms"] = "3"
-    
-    # Look for neighborhood preferences
-    neighborhoods = ["Mitte", "Kreuzberg", "Prenzlauer Berg", "Neukölln", "Wedding", "Charlottenburg"]
-    for neighborhood in neighborhoods:
-        if neighborhood.lower() in query_text.lower():
-            required_features["borough"] = neighborhood
-    
-    # Look for amenity requirements
-    amenities = ["balcony", "garden", "terrace", "elevator", "parking"]
-    for amenity in amenities:
-        if amenity in query_text.lower():
-            required_features["amenities"] = required_features.get("amenities", []) + [amenity]
-    
-    return required_features
-
-def rerank_results(results, required_features=None):
-    # If no required features, return results as is
-    if required_features is None:
-        return results
-    
-    reranked_results = []
-    
-    for doc, score in results:
-        # Start with the original similarity score
-        adjusted_score = score
-        
-        # Apply penalties for missing required features
-        if required_features:
-            for feature, value in required_features.items():
-                if feature == "bedrooms" and feature in doc.metadata:
-                    # Penalize if bedrooms don't match
-                    if doc.metadata[feature] != value:
-                        adjusted_score += 0.1  # Increase distance (worse score)
-                
-                elif feature == "borough" and feature in doc.metadata:
-                    # Penalize if borough doesn't match
-                    if doc.metadata[feature] != value:
-                        adjusted_score += 0.1  # Increase distance (worse score)
-                
-                elif feature == "amenities":
-                    # Check if amenities are mentioned in the document content
-                    for amenity in value:
-                        if amenity not in doc.page_content.lower():
-                            adjusted_score += 0.05  # Small penalty per missing amenity
-        
-        reranked_results.append((doc, adjusted_score))
-    
-    # Sort by adjusted score (lower is better)
-    reranked_results.sort(key=lambda x: x[1])
-    
-    return reranked_results
 
 # This block only runs when the script is executed directly, not when imported
 if __name__ == "__main__":

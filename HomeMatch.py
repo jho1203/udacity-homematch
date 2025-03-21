@@ -38,7 +38,7 @@ def load_or_generate_listings(model_name="gpt-4o", temperature=0.0, max_tokens=1
 
 
 
-def find_matching_listings(vectorstore, user_preferences, n_results=5):
+def find_matching_listings(vectorstore, user_preferences, n_results=3):
     # Extract metadata filters from user preferences using LLM
     metadata_filters = extract_search_parameters_llm(user_preferences)
     
