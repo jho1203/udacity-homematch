@@ -130,7 +130,8 @@ def main():
         for i, personalized_listing in enumerate(personalized_listings):
             print(f"Listing {i+1}:")
             print("----------")
-            print(personalized_listing)
+            # Extract just the personalized_description field
+            print(personalized_listing["personalized_description"])
             print("\n")
     else:
         print("Sorry, no matching listings were found for your preferences.")
