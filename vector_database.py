@@ -5,14 +5,6 @@ from langchain.embeddings import OpenAIEmbeddings
 from langchain.schema import Document
 
 def extract_listing_data(listing):
-    """Extract structured data from a listing text
-    
-    Args:
-        listing: The listing text
-        
-    Returns:
-        Document: Document with metadata
-    """
     # Import re at the top of the function to avoid multiple imports
     import re
     
@@ -79,15 +71,6 @@ def extract_listing_data(listing):
     return Document(page_content=document_text, metadata=metadata)
 
 def setup_vector_database(listings, persist_directory="./chroma_db"):
-    """Set up the vector database with listings using LangChain's Chroma integration
-    
-    Args:
-        listings: List of listing texts
-        persist_directory: Directory to persist the database (default: "./chroma_db")
-        
-    Returns:
-        Chroma: The Chroma vector store
-    """
     # Create documents from listings
     documents = [extract_listing_data(listing) for listing in listings]
     
@@ -116,16 +99,11 @@ def setup_vector_database(listings, persist_directory="./chroma_db"):
     
     return vectorstore
 
-def setup_vector_database_from_listings(listings_file="berlin_real_estate_listings.json", force_rebuild=False):
-    """Set up the vector database from listings file
+def setup_vector_database_from_listings(listings=None, force_rebuild=False):
+    # Check if listings are provided
+    if listings is None:
+        listings = []
     
-    Args:
-        listings_file: Path to the listings file (default: "berlin_real_estate_listings.json")
-        force_rebuild: Whether to force a rebuild of the vector database (default: False)
-        
-    Returns:
-        Chroma: The Chroma vector store
-    """
     # Check if we have existing listings
     if os.path.exists(listings_file):
         print(f"Found existing listings in {listings_file}")
@@ -163,19 +141,7 @@ def setup_vector_database_from_listings(listings_file="berlin_real_estate_listin
             return setup_vector_database(listings, persist_directory=db_path)
 
 def query_similar_listings(vectorstore, query_text, n_results=3, metadata_filters=None, preference_weights=None):
-    """Query the vector store for listings similar to the query text with enhanced filtering
-    
-    Args:
-        vectorstore: The Chroma vector store
-        query_text: The query text
-        n_results: Number of results to return (default: 3)
-        metadata_filters: Dictionary of metadata filters to apply (e.g., {"bedrooms": "2"}) (default: None)
-        preference_weights: Deprecated parameter, kept for backward compatibility
-        
-    Returns:
-        list: The similar documents with their scores
-    """
-    # Extract key requirements from query text if needed
+    # Extract key requirements from the query text
     required_features = extract_key_requirements(query_text)
     
     # Apply metadata filters if provided
@@ -230,14 +196,7 @@ def query_similar_listings(vectorstore, query_text, n_results=3, metadata_filter
     return results[:n_results]
 
 def extract_key_requirements(query_text):
-    """Extract key requirements from the query text
-    
-    Args:
-        query_text: The query text
-        
-    Returns:
-        dict: Dictionary of key requirements
-    """
+    # Use regular expressions to extract key requirements
     required_features = {}
     
     # Look for bedroom requirements
@@ -265,15 +224,10 @@ def extract_key_requirements(query_text):
     return required_features
 
 def rerank_results(results, required_features=None):
-    """Rerank results based on required features
+    # If no required features, return results as is
+    if required_features is None:
+        return results
     
-    Args:
-        results: List of (Document, score) tuples
-        required_features: Dictionary of required features
-        
-    Returns:
-        list: Reranked list of (Document, score) tuples
-    """
     reranked_results = []
     
     for doc, score in results:

@@ -65,18 +65,6 @@ berlin_boroughs = [
 ]
 
 def generate_listings(num_listings=20, output_file='berlin_real_estate_listings.json', model_name="gpt-4o", temperature=0.0, max_tokens=1000):
-    """Generate real estate listings for Berlin properties
-    
-    Args:
-        num_listings: Number of listings to generate (default: 20)
-        output_file: JSON file to save the listings to (default: 'berlin_real_estate_listings.json')
-        model_name: Name of the OpenAI model to use (default: "gpt-4o")
-        temperature: Temperature parameter for the LLM (default: 0.0)
-        max_tokens: Maximum number of tokens for the LLM response (default: 1000)
-        
-    Returns:
-        list: The generated listings
-    """
     # Initialize the LLM
     llm = ChatOpenAI(
         model_name=model_name,

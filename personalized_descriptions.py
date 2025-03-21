@@ -3,18 +3,6 @@ from langchain.chat_models import ChatOpenAI
 from langchain.prompts import PromptTemplate
 
 def create_personalized_description(listing_doc, user_preferences, model_name="gpt-4o", temperature=0.0, max_tokens=1000):
-    """Create a personalized description for a listing based on user preferences
-    
-    Args:
-        listing_doc: The Document object containing the listing information
-        user_preferences: String describing the user's preferences
-        model_name: Name of the OpenAI model to use (default: "gpt-4o")
-        temperature: Temperature parameter for the LLM (default: 0.0)
-        max_tokens: Maximum number of tokens for the LLM response (default: 1000)
-        
-    Returns:
-        str: The personalized description
-    """
     # Initialize the LLM
     llm = ChatOpenAI(
         model_name=model_name,
@@ -77,18 +65,7 @@ def create_personalized_description(listing_doc, user_preferences, model_name="g
     return personalized_description.strip()
 
 def generate_personalized_listings(matched_listings, user_preferences, model_name="gpt-4o", temperature=0.0, max_tokens=1000):
-    """Generate personalized descriptions for multiple listings
-    
-    Args:
-        matched_listings: List of (Document, score) tuples from vector search
-        user_preferences: String describing the user's preferences
-        model_name: Name of the OpenAI model to use (default: "gpt-4o")
-        temperature: Temperature parameter for the LLM (default: 0.0)
-        max_tokens: Maximum number of tokens for the LLM response (default: 1000)
-        
-    Returns:
-        list: List of personalized descriptions
-    """
+    # Create a list to store personalized descriptions
     personalized_listings = []
     
     for i, (doc, score) in enumerate(matched_listings):

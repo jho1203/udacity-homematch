@@ -12,16 +12,6 @@ os.environ["OPENAI_API_KEY"] = "voc-179973988312667737828436792a9844e21d5.281999
 os.environ["OPENAI_API_BASE"] = "https://openai.vocareum.com/v1"
 
 def load_or_generate_listings(model_name="gpt-4o", temperature=0.0, max_tokens=1000):
-    """Load existing listings from file or generate new ones if file doesn't exist
-    
-    Args:
-        model_name: Name of the OpenAI model to use (default: "gpt-4o")
-        temperature: Temperature parameter for the LLM (default: 0.0)
-        max_tokens: Maximum number of tokens for the LLM response (default: 1000)
-        
-    Returns:
-        list: The loaded or generated listings
-    """
     # Check if listings already exist
     listings_file = 'berlin_real_estate_listings.json'
     if os.path.exists(listings_file):
@@ -44,31 +34,14 @@ def load_or_generate_listings(model_name="gpt-4o", temperature=0.0, max_tokens=1
     return listings
 
 def setup_vector_database(listings=None):
-    """Set up the vector database from listings
-    
-    Args:
-        listings: List of listing texts (default: None)
-        
-    Returns:
-        Chroma: The Chroma vector store
-    """
+   
     print("\nSetting up vector database...")
     # Use the function from vector_database.py with force_rebuild=True
-    vectorstore = setup_vector_database_from_listings(force_rebuild=True)
+    vectorstore = setup_vector_database_from_listings(listings, force_rebuild=True)
     print("Vector database setup complete!")
     return vectorstore
 
 def find_matching_listings(vectorstore, user_preferences, n_results=3):
-    """Find listings that match the user's preferences
-    
-    Args:
-        vectorstore: The Chroma vector store
-        user_preferences: String describing the user's preferences
-        n_results: Number of results to return (default: 3)
-        
-    Returns:
-        list: List of (Document, score) tuples
-    """
     print(f"\nSearching for listings matching user preferences...")
     
     # Extract metadata filters from user preferences using LLM
@@ -113,11 +86,6 @@ def find_matching_listings(vectorstore, user_preferences, n_results=3):
     return results
 
 def collect_user_preferences():
-    """Collect user preferences through a series of questions
-    
-    Returns:
-        tuple: (questions, answers, combined_preferences)
-    """
     # Define the questions to ask the user
     questions = [
         "How big do you want your apartment to be?",
@@ -150,8 +118,6 @@ def collect_user_preferences():
     return questions, answers, combined_preferences
 
 def main():
-    """Main function to run the HomeMatch application"""
-    # Print welcome message
     print("Welcome to HomeMatch - Your Personalized Real Estate Listing Generator")
     print("----------------------------------------------------------------------")
     

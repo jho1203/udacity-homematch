@@ -6,17 +6,6 @@ from langchain.schema.messages import SystemMessage
 from langchain.output_parsers import ResponseSchema, StructuredOutputParser
 
 def extract_search_parameters_llm(user_preferences, model_name="gpt-4o", temperature=0.0):
-    """
-    Extract search parameters from user preferences using an LLM.
-    
-    Args:
-        user_preferences (str): User preferences text
-        model_name (str): Name of the LLM model to use
-        temperature (float): Temperature for LLM generation
-        
-    Returns:
-        dict: Dictionary of metadata filters
-    """
     # Create a parser for the output
     parser = StructuredOutputParser.from_response_schemas([
         ResponseSchema(name="bedrooms", description="The number of bedrooms required (as a string). Only include if explicitly mentioned.", required=False),
@@ -65,7 +54,7 @@ def extract_search_parameters_llm(user_preferences, model_name="gpt-4o", tempera
 
 # Test function for isolated testing
 def test_extraction():
-    """Test the extract_search_parameters_llm function"""
+    # Test cases
     test_preferences = [
         "I want a modern two-bedroom apartment with at least one bathroom in Mitte or Kreuzberg.",
         "Looking for a spacious 3-bedroom place with 2 bathrooms and at least 100 square meters.",

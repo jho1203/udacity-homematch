@@ -114,15 +114,3 @@ python generate_listings.py
 ```
 
 This will create 20 new listings with a variety of bedroom counts (1-4) and save them to the `berlin_real_estate_listings.json` file.
-
-## Future Enhancements
-
-1. Interactive user interface for inputting preferences
-2. Integration with real estate APIs for real property data
-3. Image generation for property visualizations
-4. Expanded property types and locations
-5. Additional metadata filters for more precise matching
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
